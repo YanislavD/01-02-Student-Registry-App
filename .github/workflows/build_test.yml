@@ -6,7 +6,6 @@ on:
 
 jobs:
   build_and_test:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -25,8 +24,24 @@ jobs:
       run: npm install
     - name: Run tests
       run: npm test
-  deploy:
+  run_security_scan:
     needs: build_and_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      - name: Install dependecies
+        run: npm install
+      - name: Run security scan with npm audit
+        run: npm audit --audit-level=moderate
+  deploy:
+    needs: run_security_scan
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Render
